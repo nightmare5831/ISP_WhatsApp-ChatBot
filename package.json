@@ -10,6 +10,7 @@
   "author": "nightmare5831",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.10.0",
     "cors": "2.8.5",
     "dotenv": "8.0.0",
     "express": "^4.16.3",
