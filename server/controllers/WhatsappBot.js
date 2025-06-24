@@ -1,6 +1,5 @@
 import twilio from "twilio";
-import { customerByPhone } from "../utills/service";
-import { testLoginEndpoints } from "../utills/splynxClient";
+import { customerByPhone, customerById } from "../utills/service";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -15,11 +14,11 @@ const userSessions = new Map();
 
 // Menu options mapping
 const MENU_OPTIONS = {
-  1: 'account_info',
-  2: 'recharge_voucher', 
-  3: 'check_balance',
-  4: 'change_plan',
-  5: 'support'
+  1: "account_info",
+  2: "recharge_voucher",
+  3: "check_balance",
+  4: "change_plan",
+  5: "support",
 };
 
 /**
@@ -41,100 +40,143 @@ class WhatsappBot {
     const userMessage = Body.trim();
 
     console.log("User message:", userMessage);
-
     try {
-      // await testLoginEndpoints();
-      
-      // Get or create user session
+      // await testLoginEndpoints()
       let userSession = userSessions.get(senderNumber) || {
-        state: 'initial',
-        lastActivity: Date.now()
+        state: "initial",
+        lastActivity: Date.now(),
       };
 
-      // Clean up old sessions (older than 30 minutes)
       if (Date.now() - userSession.lastActivity > 30 * 60 * 1000) {
-        userSession = { state: 'initial', lastActivity: Date.now() };
+        userSession = { state: "initial", lastActivity: Date.now() };
       }
-
-      // Handle different conversation states
+      console.log("User session state:", userSession.state);
       switch (userSession.state) {
-        case 'initial':
-          await WhatsappBot.handleInitialMessage(twiml, senderNumber, userMessage);
-          userSession.state = 'awaiting_selection';
+        case "initial":
+          await WhatsappBot.handleInitialMessage(
+            twiml,
+            senderNumber,
+            userMessage,
+            userSession
+          );
           break;
-          
-        case 'awaiting_selection':
-          await WhatsappBot.handleMenuSelection(twiml, senderNumber, userMessage, userSession);
+
+        case "awaiting_selection":
+          await WhatsappBot.handleMenuSelection(
+            twiml,
+            senderNumber,
+            userMessage,
+            userSession
+          );
           break;
-          
-        case 'awaiting_voucher':
-          await WhatsappBot.handleVoucherInput(twiml, senderNumber, userMessage, userSession);
+
+        case "awaiting_voucher":
+          await WhatsappBot.handleVoucherInput(
+            twiml,
+            senderNumber,
+            userMessage,
+            userSession
+          );
           break;
-          
-        case 'awaiting_plan_selection':
-          await WhatsappBot.handlePlanSelection(twiml, senderNumber, userMessage, userSession);
+
+        case "awaiting_plan_selection":
+          await WhatsappBot.handlePlanSelection(
+            twiml,
+            senderNumber,
+            userMessage,
+            userSession
+          );
           break;
-          
+
         default:
-          await WhatsappBot.handleInitialMessage(twiml, senderNumber, userMessage);
-          userSession.state = 'awaiting_selection';
+          await WhatsappBot.handleInitialMessage(
+            twiml,
+            senderNumber,
+            userMessage,
+            userSession
+          );
       }
 
-      // Update session
       userSession.lastActivity = Date.now();
       userSessions.set(senderNumber, userSession);
 
       res.set("Content-Type", "text/xml");
       return res.status(200).send(twiml.toString());
-      
     } catch (error) {
       console.error("Error", error);
-      twiml.message("❌ Sorry, there was an error processing your request. Please try again later.");
+      twiml.message(
+        "❌ Sorry, there was an error processing your request. Please try again later."
+      );
       res.set("Content-Type", "text/xml");
       return res.status(200).send(twiml.toString());
     }
   }
 
-  static async handleInitialMessage(twiml, senderNumber, userMessage) {
-    // Uncomment when ready to check customer
-    // const customer = await customerByPhone(senderNumber);
-    // if (!customer) {
-    //   twiml.message(
-    //     `Hello, we could not find your account with the number ${senderNumber}. Please contact support.`
-    //   );
-    //   return;
-    // }
-
+  static async handleInitialMessage(
+    twiml,
+    senderNumber,
+    userMessage,
+    userSession
+  ) {
+    let customerId = userSession.customerId;
+    let customer;
+    if (!customerId) {
+      customer =
+        userSession.state === "idVerification"
+          ? await customerById(userMessage)
+          : await customerByPhone(senderNumber);
+    }
+    if (!customer && !customerId) {
+      userSession.state = "idVerification";
+      twiml.message(
+        `Hello, we could not find your account with the number ${senderNumber}.\n` +
+          `Please send 👤 cutomerId or 📞 contact support.`
+      );
+      return;
+    }
+    if (!userSession.customerId) userSession.customerId = customer.id;
+    userSession.state = "awaiting_selection";
     twiml.message(
       `👋 Welcome ${senderNumber}!\n\n` +
-      `Please choose an option by replying with the number:\n\n` +
-      `1️⃣ View account information and data usage\n` +
-      `2️⃣ Recharge via voucher\n` +
-      `3️⃣ Check balance\n` +
-      `4️⃣ Change service plan\n` +
-      `5️⃣ Support & Auto-Replies\n\n` +
-      `Reply with a number (1-5) to continue.`
+        `Please choose an option by replying with the number:\n` +
+        `📋 View account information and data usage\n` +
+        `🎫 Recharge via voucher\n` +
+        `💰 Check balance\n` +
+        `📶 Change service plan\n` +
+        `📞 Support & Auto-Replies\n\n` +
+        `Reply with a number (1-5) to continue.`
     );
+    return;
   }
 
-  static async handleMenuSelection(twiml, senderNumber, userMessage, userSession) {
+  static async handleMenuSelection(
+    twiml,
+    senderNumber,
+    userMessage,
+    userSession
+  ) {
     const selection = userMessage.trim();
-    
-    if (selection.toLowerCase() === 'menu') {
-      userSession.state = 'awaiting_selection';
-      await WhatsappBot.handleInitialMessage(twiml, senderNumber, '');
+
+    if (selection.toLowerCase() === "menu") {
+      userSession.state = "awaiting_selection";
+      await WhatsappBot.handleInitialMessage(
+        twiml,
+        senderNumber,
+        userMessage,
+        userSession
+      );
       return;
     }
 
     if (!MENU_OPTIONS[selection]) {
       twiml.message(
         `❌ Invalid selection. Please reply with a number from 1 to 5.\n\n` +
-        `1️⃣ View account information\n` +
-        `2️⃣ Recharge via voucher\n` +
-        `3️⃣ Check balance\n` +
-        `4️⃣ Change service plan\n` +
-        `5️⃣ Support\n\n` +
-        `Type 'menu' to see options again.`
+          `1️⃣ View account information\n` +
+          `2️⃣ Recharge via voucher\n` +
+          `3️⃣ Check balance\n` +
+          `4️⃣ Change service plan\n` +
+          `5️⃣ Support\n\n` +
+          `Type 'menu' to see options again.`
       );
       return;
     }
@@ -142,141 +184,163 @@ class WhatsappBot {
     const selectedOption = MENU_OPTIONS[selection];
 
     switch (selectedOption) {
-      case 'account_info':
-        await WhatsappBot.handleAccountInfo(twiml, senderNumber);
-        userSession.state = 'initial'; // Reset to main menu
+      case "account_info":
+        await WhatsappBot.handleAccountInfo(twiml, userSession.customerId);
+        userSession.state = "awaiting_selection"; // Reset to main menu
         break;
-        
-      case 'recharge_voucher':
+
+      case "recharge_voucher":
         twiml.message(
-          `🎫 Voucher Recharge\n\n` +
-          `Please enter your voucher code:`
+          `🎫 Voucher Recharge\n\n` + `Please enter your voucher code:`
         );
-        userSession.state = 'awaiting_voucher';
+        userSession.state = "awaiting_voucher";
         break;
-        
-      case 'check_balance':
-        await WhatsappBot.handleCheckBalance(twiml, senderNumber);
-        userSession.state = 'initial'; // Reset to main menu
+
+      case "check_balance":
+        await WhatsappBot.handleCheckBalance(twiml, userSession.customerId);
+        userSession.state = "awaiting_selection"; // Reset to main menu
         break;
-        
-      case 'change_plan':
-        await WhatsappBot.handleChangePlan(twiml, senderNumber);
-        userSession.state = 'awaiting_plan_selection';
+
+      case "change_plan":
+        await WhatsappBot.handleChangePlan(twiml, userSession.customerId);
+        userSession.state = "awaiting_plan_selection";
         break;
-        
-      case 'support':
-        await WhatsappBot.handleSupport(twiml, senderNumber);
-        userSession.state = 'initial'; // Reset to main menu
+
+      case "support":
+        await WhatsappBot.handleSupport(twiml, userSession.customerId);
+        userSession.state = "initial"; // Reset to main menu
         break;
     }
   }
 
-  static async handleAccountInfo(twiml, senderNumber) {
+  static async handleAccountInfo(twiml, customerId) {
     // Replace with actual customer data retrieval
-    const customer = await customerByPhone(senderNumber);
-    
+    const customer = await customerById(customerId);
+
     if (customer) {
       twiml.message(
         `📋 Account Information\n\n` +
-        `📞 Phone: ${senderNumber}\n` +
-        `👤 Name: ${customer.name || 'N/A'}\n` +
-        `💰 Balance: $${customer.balance || '0.00'}\n` +
-        `📊 Data Usage: ${customer.dataUsage || '0 MB'} / ${customer.dataLimit || 'Unlimited'}\n` +
-        `📦 Current Plan: ${customer.plan || 'Basic'}\n\n` +
-        `Type 'menu' to return to main menu.`
+          `👤 Name: ${customer.name || "N/A"}\n` +
+          `📞 Phone: ${customer.phone}\n` +
+          `🎉 CustomerId: ${customer.id}\n` +
+          `💰 Balance: $${customer.balance || "0.00"}\n` +
+          `📊 Data Usage: ${customer.dataUsage || "0 MB"} / ${
+            customer.dataLimit || "Unlimited"
+          }\n` +
+          `📦 Current Plan: ${customer.plan || "Basic"}\n\n` +
+          `Type 'menu' to return to main menu.`
       );
     } else {
       twiml.message(
         `❌ Could not retrieve account information. Please contact support.\n\n` +
-        `Type 'menu' to return to main menu.`
+          `Type 'menu' to return to main menu.`
       );
     }
   }
 
-  static async handleVoucherInput(twiml, senderNumber, voucherCode, userSession) {
-    if (voucherCode.toLowerCase() === 'menu') {
-      userSession.state = 'initial';
-      await WhatsappBot.handleInitialMessage(twiml, senderNumber, '');
+  static async handleVoucherInput(
+    twiml,
+    senderNumber,
+    voucherCode,
+    userSession
+  ) {
+    if (voucherCode.toLowerCase() === "menu") {
+      userSession.state = "awaiting_selection";
+      await WhatsappBot.handleInitialMessage(
+        twiml,
+        senderNumber,
+        userMessage,
+        userSession
+      );
       return;
     }
 
     // Validate and process voucher (implement your voucher logic here)
     const isValidVoucher = await WhatsappBot.validateVoucher(voucherCode);
-    
+
     if (isValidVoucher) {
       twiml.message(
         `✅ Voucher Applied Successfully!\n\n` +
-        `🎫 Voucher Code: ${voucherCode}\n` +
-        `💰 Amount: $10.00\n` +
-        `📊 New Balance: $25.00\n\n` +
-        `Type 'menu' to return to main menu.`
+          `🎫 Voucher Code: ${voucherCode}\n` +
+          `💰 Amount: $10.00\n` +
+          `📊 New Balance: $25.00\n\n` +
+          `Type 'menu' to return to main menu.`
       );
     } else {
       twiml.message(
         `❌ Invalid voucher code: ${voucherCode}\n\n` +
-        `Please check the code and try again, or type 'menu' to return to main menu.`
+          `Please check the code and try again, or type 'menu' to return to main menu.`
       );
       return; // Stay in voucher input state
     }
-    
-    userSession.state = 'awaiting_voucher';
+
+    userSession.state = "awaiting_voucher";
   }
 
-  static async handleCheckBalance(twiml, senderNumber) {
-    const customer = await customerByPhone(senderNumber);
-    
+  static async handleCheckBalance(twiml, customerId) {
+    const customer = await customerById(customerId);
+
     if (customer) {
       twiml.message(
         `💰 Balance Information\n\n` +
-        `Current Balance: $${customer.balance || '0.00'}\n` +
-        `Last Recharge: ${customer.lastRecharge || 'N/A'}\n` +
-        `Next Bill Date: ${customer.nextBillDate || 'N/A'}\n\n` +
-        `Type 'menu' to return to main menu.`
+          `Current Balance: $${customer.balance || "0.00"}\n` +
+          `Last Recharge: ${customer.lastRecharge || "N/A"}\n` +
+          `Next Bill Date: ${customer.nextBillDate || "N/A"}\n\n` +
+          `Type 'menu' to return to main menu.`
       );
     } else {
       twiml.message(
         `❌ Could not retrieve balance information.\n\n` +
-        `Type 'menu' to return to main menu.`
+          `Type 'menu' to return to main menu.`
       );
     }
   }
 
-  static async handleChangePlan(twiml, senderNumber) {
+  static async handleChangePlan(twiml, customerId) {
     twiml.message(
       `📶 Available Service Plans\n\n` +
-      `1️⃣ Basic Plan - $10/month (1GB)\n` +
-      `2️⃣ Standard Plan - $20/month (5GB)\n` +
-      `3️⃣ Premium Plan - $30/month (Unlimited)\n` +
-      `4️⃣ Enterprise Plan - $50/month (Unlimited + Priority)\n\n` +
-      `Reply with the plan number (1-4) or type 'menu' to return.`
+        `1️⃣ Basic Plan - $10/month (1GB)\n` +
+        `2️⃣ Standard Plan - $20/month (5GB)\n` +
+        `3️⃣ Premium Plan - $30/month (Unlimited)\n` +
+        `4️⃣ Enterprise Plan - $50/month (Unlimited + Priority)\n\n` +
+        `Reply with the plan number (1-4) or type 'menu' to return.`
     );
   }
 
-  static async handlePlanSelection(twiml, senderNumber, selection, userSession) {
-    if (selection.toLowerCase() === 'menu') {
-      userSession.state = 'awaiting_selection';
-      await WhatsappBot.handleInitialMessage(twiml, senderNumber, '');
+  static async handlePlanSelection(
+    twiml,
+    senderNumber,
+    selection,
+    userSession
+  ) {
+    if (selection.toLowerCase() === "menu") {
+      userSession.state = "awaiting_selection";
+      await WhatsappBot.handleInitialMessage(
+        twiml,
+        senderNumber,
+        userMessage,
+        userSession
+      );
       return;
     }
 
     const planMap = {
-      1: 'Basic Plan - $10/month (1GB)',
-      2: 'Standard Plan - $20/month (5GB)', 
-      3: 'Premium Plan - $30/month (Unlimited)',
-      4: 'Enterprise Plan - $50/month (Unlimited + Priority)'
+      1: "Basic Plan - $10/month (1GB)",
+      2: "Standard Plan - $20/month (5GB)",
+      3: "Premium Plan - $30/month (Unlimited)",
+      4: "Enterprise Plan - $50/month (Unlimited + Priority)",
     };
 
     if (planMap[selection]) {
       // Implement plan change logic here
       twiml.message(
         `✅ Plan Change Request Submitted\n\n` +
-        `📦 New Plan: ${planMap[selection]}\n` +
-        `📅 Effective Date: Next billing cycle\n` +
-        `📧 Confirmation will be sent via email.\n\n` +
-        `Type 'menu' to return to main menu.`
+          `📦 New Plan: ${planMap[selection]}\n` +
+          `📅 Effective Date: Next billing cycle\n` +
+          `📧 Confirmation will be sent via email.\n\n` +
+          `Type 'menu' to return to main menu.`
       );
-      userSession.state = 'awaiting_selection';
+      userSession.state = "awaiting_selection";
     } else {
       twiml.message(
         `❌ Invalid plan selection. Please choose 1-4 or type 'menu' to return.`
@@ -284,15 +348,15 @@ class WhatsappBot {
     }
   }
 
-  static async handleSupport(twiml, senderNumber) {
+  static async handleSupport(twiml, customerId) {
     twiml.message(
       `📞 Support Information\n\n` +
-      `📧 Email: support@yourcompany.com\n` +
-      `📞 Phone: +1-800-XXX-XXXX\n` +
-      `🕒 Hours: Mon-Fri 9AM-6PM\n` +
-      `💬 Live Chat: Available on our website\n\n` +
-      `For urgent issues, please call our support line.\n\n` +
-      `Type 'menu' to return to main menu.`
+        `📧 Email: support@yourcompany.com\n` +
+        `📞 Phone: +1-800-XXX-XXXX\n` +
+        `🕒 Hours: Mon-Fri 9AM-6PM\n` +
+        `💬 Live Chat: Available on our website\n\n` +
+        `For urgent issues, please call our support line.\n\n` +
+        `Type 'menu' to return to main menu.`
     );
   }
 
@@ -309,7 +373,7 @@ class WhatsappBot {
   static cleanupOldSessions() {
     const now = Date.now();
     const thirtyMinutes = 30 * 60 * 1000;
-    
+
     for (const [phone, session] of userSessions.entries()) {
       if (now - session.lastActivity > thirtyMinutes) {
         userSessions.delete(phone);
