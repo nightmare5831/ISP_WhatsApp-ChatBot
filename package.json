@@ -4,7 +4,7 @@
   "description": "Provide ISP Service via Whatsapp to user",
   "main": "index.js",
   "scripts": {
-    "start": "babel-node server/server.js",
+    "start": "node index.js",
     "dev": "babel-node server/server.js",
     "build": "npm install",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -22,7 +22,8 @@
     "@babel/cli": "7.5.5",
     "@babel/core": "7.5.5",
     "@babel/node": "^7.5.5",
-    "@babel/preset-env": "^7.5.5"
+    "@babel/preset-env": "^7.5.5",
+    "@babel/register": "^7.5.5"
   },
   "engines": {
     "node": "20.x"
