@@ -1,5 +1,5 @@
 import twilio from "twilio";
-import { customerByPhone, customerById,customerByIdPassword } from "../utills/service.js";
+import { customerByPhone, customerById,customerByIdPassword } from "../utills/service";
 import dotenv from "dotenv";
 
 dotenv.config();
