@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "babel-node server/server.js",
+    "dev": "babel-node server/server.js",
+    "build": "npm install",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "nightmare5831",
@@ -23,6 +25,6 @@
     "@babel/preset-env": "^7.5.5"
   },
   "engines": {
-    "node": "8.x"
+    "node": "20.x"
   }
 }
