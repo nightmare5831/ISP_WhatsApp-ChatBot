@@ -4,22 +4,25 @@
   "description": "Provide ISP Service via Whatsapp to user",
   "main": "index.js",
   "scripts": {
-    "dev": "vercel dev",
-    "start": "node api/index.js"
+    "start": "babel-node server/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "nightmare5831",
   "license": "ISC",
   "dependencies": {
-    "axios": "^1.10.0",
     "cors": "2.8.5",
     "dotenv": "8.0.0",
     "express": "^4.16.3",
     "googleapis": "^42.0.0",
-    "serverless-http": "^3.2.0",
     "twilio": "^4.6.0"
   },
-  "engines": {
-    "node": "20.x"
+  "devDependencies": {
+    "@babel/cli": "7.5.5",
+    "@babel/core": "7.5.5",
+    "@babel/node": "^7.5.5",
+    "@babel/preset-env": "^7.5.5"
   },
-  "type": "module"
+  "engines": {
+    "node": "8.x"
+  }
 }
