@@ -1,5 +1,5 @@
 import twilio from "twilio";
-import { customerByPhone, customerById } from "../utills/service";
+import { customerByPhone, customerById,customerByIdPassword } from "../utills/service";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -123,21 +123,25 @@ class WhatsappBot {
     if (!customerId) {
       customer =
         userSession.state === "idVerification"
-          ? await customerById(userMessage)
+          ? await customerByIdPassword(userMessage)
           : await customerByPhone(senderNumber);
     }
     if (!customer && !customerId) {
       userSession.state = "idVerification";
       twiml.message(
         `Hello, we could not find your account with the number ${senderNumber}.\n` +
-          `Please send 👤 cutomerId or 📞 contact support.`
+        `Please send 👤 CutomerId and 🔑 Portal-login , Or 📞 contact support.\n`+
+        `Example: 9557 4001360932\n\n`
       );
       return;
     }
-    if (!userSession.customerId) userSession.customerId = customer.id;
+    if (!userSession.customerId) {
+      userSession.customerId = customer.id
+      userSession.customerName = customer.name || "Customer";
+    };
     userSession.state = "awaiting_selection";
     twiml.message(
-      `👋 Welcome ${senderNumber}!\n\n` +
+      `👋 Welcome ${userSession.customerName}!\n\n` +
         `Please choose an option by replying with the number:\n` +
         `📋 View account information and data usage\n` +
         `🎫 Recharge via voucher\n` +
@@ -220,15 +224,16 @@ class WhatsappBot {
     if (customer) {
       twiml.message(
         `📋 Account Information\n\n` +
-          `👤 Name: ${customer.name || "N/A"}\n` +
-          `📞 Phone: ${customer.phone}\n` +
-          `🎉 CustomerId: ${customer.id}\n` +
-          `💰 Balance: $${customer.balance || "0.00"}\n` +
-          `📊 Data Usage: ${customer.dataUsage || "0 MB"} / ${
-            customer.dataLimit || "Unlimited"
-          }\n` +
-          `📦 Current Plan: ${customer.plan || "Basic"}\n\n` +
-          `Type 'menu' to return to main menu.`
+        `👤 UserName: ${customer.name || "N/A"}\n` +
+        `📦 Current Plan: ${customer.billing_type || "Prepaid(custom)"}\n` +
+        `📞 Expiry Date: ${customer.last_update}\n` +
+        `🎉 Speed: ${customer.id}\n` +
+        `💰 Balance: $${customer.mrr_total || "0.00"}\n` +
+        `🧶 Status: ${customer.status}\n` +
+        `📊 Data Usage: ${customer.dataUsage || "0 MB"} / ${
+          customer.dataLimit || "Unlimited"
+        }\n` +
+        `Type 'menu' to return to main menu.`
       );
     } else {
       twiml.message(
