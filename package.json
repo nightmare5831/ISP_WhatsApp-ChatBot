@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "vercel dev",
-    "start": "node api/index.js",
-    "build": "vercel build"
+    "start": "node api/index.js"
   },
   "author": "nightmare5831",
   "license": "ISC",
