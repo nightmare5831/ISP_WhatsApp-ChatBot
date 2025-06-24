@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import serviceRouter from './routes';
+import serviceRouter from './routes/index.js';
 import serverless from 'serverless-http';
 import dotenv from 'dotenv';
 dotenv.config();
