@@ -1,4 +1,4 @@
-import { splynxRequest } from "./splynxClient";
+import { splynxRequest } from "./splynxClient.js";
 
 export const customerByPhone = async (phoneNumber) => {
   const response = await splynxRequest("get", `/customers/customer`, {

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import WhatsappBot from '../controllers/WhatsappBot';
+import WhatsappBot from '../controllers/WhatsappBot.js';
 
 const botRouter = Router();
 
