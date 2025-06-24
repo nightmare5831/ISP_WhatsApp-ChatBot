@@ -1,12 +1,4 @@
 {
-  "functions": {
-    "api/**/*.js": {
-      "maxDuration": 300
-    },
-    "index.js": {
-      "maxDuration": 300
-    }
-  },
   "builds": [
     {
       "src": "index.js",
