@@ -1,12 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import serviceRouter from './routes';
+import serverless from 'serverless-http';
 import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-
-const { PORT = 3000 } = process.env;
 
 app.use(cors());
 
@@ -33,6 +32,4 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => console.log(`App Listening on port ${PORT}`));
-
-export default app;
+export const handler = serverless(app);
