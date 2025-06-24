@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import serviceRouter from './routes/index.js';
-import serverless from 'serverless-http';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -32,4 +31,4 @@ app.use((err, req, res, next) => {
   });
 });
 
-export default serverless(app);
+export default app;
