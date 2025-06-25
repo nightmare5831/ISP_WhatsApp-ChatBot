@@ -1,5 +1,9 @@
 import twilio from "twilio";
-import { customerByPhone, customerById,customerByIdPassword } from "../utills/service";
+import {
+  customerByPhone,
+  customerById,
+  customerByIdPassword,
+} from "../utills/service";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -39,16 +43,16 @@ class WhatsappBot {
     const senderNumber = From.replace("whatsapp:", "");
     const userMessage = Body.trim();
 
+    let userSession = userSessions.get(senderNumber) || {
+      state: "initial",
+      lastActivity: Date.now(),
+      language: 0,
+    };
     console.log("User message:", userMessage);
+    console.log('language',userSession.language)
     try {
-      // await testLoginEndpoints()
-      let userSession = userSessions.get(senderNumber) || {
-        state: "initial",
-        lastActivity: Date.now(),
-      };
-
       if (Date.now() - userSession.lastActivity > 30 * 60 * 1000) {
-        userSession = { state: "initial", lastActivity: Date.now() };
+        userSession = { state: "initial", lastActivity: Date.now(), language: userSession.language || 0 };
       }
       console.log("User session state:", userSession.state);
       switch (userSession.state) {
@@ -87,7 +91,22 @@ class WhatsappBot {
             userSession
           );
           break;
-
+        case "plan":
+          await WhatsappBot.handleSupport(
+            twiml,
+            senderNumber,
+            userMessage,
+            userSession
+          );
+          break;
+        case "support":
+          await WhatsappBot.changeLanguage(
+            twiml,
+            senderNumber,
+            userMessage,
+            userSession
+          );
+          break;
         default:
           await WhatsappBot.handleInitialMessage(
             twiml,
@@ -104,9 +123,13 @@ class WhatsappBot {
       return res.status(200).send(twiml.toString());
     } catch (error) {
       console.error("Error", error);
-      twiml.message(
-        "❌ Sorry, there was an error processing your request. Please try again later."
-      );
+      userSession.language === 1
+        ? twiml.message(
+            "❌ Sorry, there was an error processing your request. Please try again later."
+          )
+        : twiml.message(
+            "❌ عذرًا، حدث خطأ أثناء معالجة طلبك. يُرجى المحاولة لاحقًا."
+          );
       res.set("Content-Type", "text/xml");
       return res.status(200).send(twiml.toString());
     }
@@ -128,28 +151,46 @@ class WhatsappBot {
     }
     if (!customer && !customerId) {
       userSession.state = "idVerification";
-      twiml.message(
-        `${senderNumber} مرحبًا، لم نتمكن من العثور على حسابك بالرقم.\n` +
-        `الرجاء إدخال 👤 معرف العميل و 🔑 تسجيل الدخول إلى البوابة، أو 📞 الاتصال بالدعم.\n`+
-        `مثال: 9557 4001360932\n\n`
-      );
+      userSession.language === 1
+        ? twiml.message(
+            `${senderNumber} مرحبًا، لم نتمكن من العثور على حسابك بالرقم.\n` +
+              `الرجاء إدخال 👤 معرف العميل و 🔑 تسجيل الدخول إلى البوابة، أو 📞 الاتصال بالدعم.\n` +
+              `مثال: 9557 4001360932\n\n`
+          )
+        : twiml.message(
+            `Hello, we could not find your account with the number ${senderNumber}.\n` +
+              `Please send 👤 CutomerId and 🔑 Portal-login , Or 📞 contact support.\n` +
+              `Example: 9557 4001360932\n\n`
+          );
       return;
     }
     if (!userSession.customerId) {
-      userSession.customerId = customer.id
+      userSession.customerId = customer.id;
       userSession.customerName = customer.name || "Customer";
-    };
+    }
     userSession.state = "awaiting_selection";
-    twiml.message(
-      `👋 ${userSession.customerName} !مرحباً\n\n` +
-        `الرجاء اختيار أحد الخيارات عن طريق الرد بالرقم:\n` +
-        `📋 عرض معلومات الحساب واستخدام البيانات\n` +
-        `🎫 إعادة الشحن عبر القسيمة\n` +
-        `💰 التحقق من الرصيد\n` +
-        `📶 تغيير خطة الخدمة\n` +
-        `📞 الدعم والردود التلقائية\n\n` +
-        `أجب برقم (1 ~ 5) للاستمرار`
-    );
+    console.log('language', userSession.language)
+    userSession.language === 1
+      ? twiml.message(
+          `👋 ${userSession.customerName} !مرحباً\n\n` +
+            `الرجاء اختيار أحد الخيارات عن طريق الرد بالرقم:\n` +
+            `📋 عرض معلومات الحساب واستخدام البيانات\n` +
+            `🎫 إعادة الشحن عبر القسيمة\n` +
+            `💰 التحقق من الرصيد\n` +
+            `📶 تغيير خطة الخدمة\n` +
+            `📞 الدعم والردود التلقائية\n\n` +
+            `أجب برقم (1 ~ 5) للاستمرار`
+        )
+      : twiml.message(
+          `👋 Welcome ${userSession.customerName}!\n\n` +
+            `Please choose an option by replying with the number:\n` +
+            `📋 View account information and data usage\n` +
+            `🎫 Recharge via voucher\n` +
+            `💰 Check balance\n` +
+            `📶 Change service plan\n` +
+            `📞 Support & Auto-Replies\n\n` +
+            `Reply with a number (1-5) to continue.`
+        );
     return;
   }
 
@@ -161,7 +202,10 @@ class WhatsappBot {
   ) {
     const selection = userMessage.trim();
 
-    if (selection.toLowerCase() === "menu") {
+    if (
+      selection.toLowerCase() === "menu" ||
+      selection.toLowerCase() === "قائمة طعام"
+    ) {
       userSession.state = "awaiting_selection";
       await WhatsappBot.handleInitialMessage(
         twiml,
@@ -173,15 +217,25 @@ class WhatsappBot {
     }
 
     if (!MENU_OPTIONS[selection]) {
-      twiml.message(
-        `❌ اختيار خاطئ. يُرجى الرد برقم من ١ إلى ٥.\n\n` +
-          `1️⃣ عرض معلومات الحساب\n` +
-          `2️⃣ إعادة الشحن عبر القسيمة\n` +
-          `3️⃣ التحقق من الرصيد\n` +
-          `4️⃣ تغيير خطة الخدمة\n` +
-          `5️⃣ يدعم\n\n` +
-          `اكتب "القائمة" لرؤية الخيارات مرة أخرى.`
-      );
+      userSession.language === 1
+        ? twiml.message(
+            `❌ اختيار خاطئ. يُرجى الرد برقم من ١ إلى ٥.\n\n` +
+              `1️⃣ عرض معلومات الحساب\n` +
+              `2️⃣ إعادة الشحن عبر القسيمة\n` +
+              `3️⃣ التحقق من الرصيد\n` +
+              `4️⃣ تغيير خطة الخدمة\n` +
+              `5️⃣ يدعم\n\n` +
+              `اكتب "القائمة" لرؤية الخيارات مرة أخرى.`
+          )
+        : twiml.message(
+            `❌ Invalid selection. Please reply with a number from 1 to 5.\n\n` +
+              `1️⃣ View account information\n` +
+              `2️⃣ Recharge via voucher\n` +
+              `3️⃣ Check balance\n` +
+              `4️⃣ Change service plan\n` +
+              `5️⃣ Support\n\n` +
+              `Type 'menu' to see options again.`
+          );
       return;
     }
 
@@ -189,7 +243,7 @@ class WhatsappBot {
 
     switch (selectedOption) {
       case "account_info":
-        await WhatsappBot.handleAccountInfo(twiml, userSession.customerId);
+        await WhatsappBot.handleAccountInfo(twiml, userSession);
         userSession.state = "awaiting_selection"; // Reset to main menu
         break;
 
@@ -201,45 +255,66 @@ class WhatsappBot {
         break;
 
       case "check_balance":
-        await WhatsappBot.handleCheckBalance(twiml, userSession.customerId);
+        await WhatsappBot.handleCheckBalance(twiml, userSession);
         userSession.state = "awaiting_selection"; // Reset to main menu
         break;
 
       case "change_plan":
-        await WhatsappBot.handleChangePlan(twiml, userSession.customerId);
+        await WhatsappBot.handleChangePlan(twiml, userSession);
         userSession.state = "awaiting_plan_selection";
         break;
 
       case "support":
-        await WhatsappBot.handleSupport(twiml, userSession.customerId);
-        userSession.state = "initial"; // Reset to main menu
+        await WhatsappBot.handleSupport(twiml, userSession);
+        userSession.state = "support";
         break;
     }
   }
 
-  static async handleAccountInfo(twiml, customerId) {
+  static async handleAccountInfo(twiml, userSession) {
     // Replace with actual customer data retrieval
-    const customer = await customerById(customerId);
+    const customer = await customerById(userSession.customerId);
 
     if (customer) {
-      twiml.message(
-        `📋 معلومات الحساب\n\n` +
-        `👤 ${customer.name || "غير متوفر"} :اسم المستخدم\n` +
-        `📦 ${customer.plan || "مدفوع مسبقًا (مخصص)"} الخطة الحالية:\n` +
-        `✨ ${customer.expire} تاريخ انتهاء الصلاحية:\n` +
-        `🎉 ${customer.speed} سرعة:\n` +
-        `💰 ${customer.balance || "0.00"} الرصيد: $\n` +
-        `🧶 ${customer.status} حالة:\n` +
-        `📊${customer.dataUsage || "0 MB"} استخدام البيانات:/ ${
-          customer.dataLimit || "غير محدود"
-        }\n` +
-        `اكتب "القائمة" للعودة إلى القائمة الرئيسية.`
-      );
+      userSession.language === 1
+        ? twiml.message(
+            `📋 معلومات الحساب\n\n` +
+              `👤 ${customer.name || "غير متوفر"} :اسم المستخدم\n` +
+              `📦 ${customer.plan || "مدفوع مسبقًا (مخصص)"} الخطة الحالية:\n` +
+              `✨ ${customer.expire} تاريخ انتهاء الصلاحية:\n` +
+              `🎉 ${customer.speed} سرعة:\n` +
+              `💰 ${customer.balance || "0.00"} الرصيد: $\n` +
+              `🧶 ${customer.status} حالة:\n` +
+              `📊${customer.dataUsage || "0 MB"} استخدام البيانات:/ ${
+                customer.dataLimit || "غير محدود"
+              }\n` +
+              `اكتب "القائمة" للعودة إلى القائمة الرئيسية.`
+          )
+        : twiml.message(
+            `📋 Account Information\n\n` +
+              `👤 UserName: ${customer.name || "N/A"}\n` +
+              `📦 Current Plan: ${
+                customer.billing_type || "Prepaid(custom)"
+              }\n` +
+              `📞 Expiry Date: ${customer.last_update}\n` +
+              `🎉 Speed: ${customer.id}\n` +
+              `💰 Balance: $${customer.mrr_total || "0.00"}\n` +
+              `🧶 Status: ${customer.status}\n` +
+              `📊 Data Usage: ${customer.dataUsage || "0 MB"} / ${
+                customer.dataLimit || "Unlimited"
+              }\n` +
+              `Type 'menu' to return to main menu.`
+          );
     } else {
-      twiml.message(
-        `❌ تعذر استرداد معلومات الحساب. يُرجى التواصل مع الدعم.\n\n` +
-         `اكتب 'menu' للعودة إلى القائمة الرئيسية.`
-      );
+      userSession.language === 1
+        ? twiml.message(
+            `❌ تعذر استرداد معلومات الحساب. يُرجى التواصل مع الدعم.\n\n` +
+              `اكتب 'menu' للعودة إلى القائمة الرئيسية.`
+          )
+        : twiml.message(
+            `❌ Could not retrieve account information. Please contact support.\n\n` +
+              `Type 'menu' to return to main menu.`
+          );
     }
   }
 
@@ -249,7 +324,10 @@ class WhatsappBot {
     voucherCode,
     userSession
   ) {
-    if (voucherCode.toLowerCase() === "menu") {
+    if (
+      voucherCode.toLowerCase() === "menu" ||
+      voucherCode.toLowerCase() === "قائمة طعام"
+    ) {
       userSession.state = "awaiting_selection";
       await WhatsappBot.handleInitialMessage(
         twiml,
@@ -264,52 +342,89 @@ class WhatsappBot {
     const isValidVoucher = await WhatsappBot.validateVoucher(voucherCode);
 
     if (isValidVoucher) {
-      twiml.message(
-        `✅ تم تطبيق القسيمة بنجاح!\n\n` +
-          `🎫 ${voucherCode} رمز القسيمة:\n` +
-          `💰 المبلغ: 10.00 دولارًا\n` +
-          `📊 نيو بالانس: 25.00 دولارًا\n\n` +
-          `اكتب "القائمة" للعودة إلى القائمة الرئيسية.`
-      );
+      userSession.language === 1
+        ? twiml.message(
+            `✅ تم تطبيق القسيمة بنجاح!\n\n` +
+              `🎫 ${voucherCode} رمز القسيمة:\n` +
+              `💰 المبلغ: 10.00 دولارًا\n` +
+              `📊 نيو بالانس: 25.00 دولارًا\n\n` +
+              `اكتب "القائمة" للعودة إلى القائمة الرئيسية.`
+          )
+        : twiml.message(
+            `✅ Voucher Applied Successfully!\n\n` +
+              `🎫 Voucher Code: ${voucherCode}\n` +
+              `💰 Amount: $10.00\n` +
+              `📊 New Balance: $25.00\n\n` +
+              `Type 'menu' to return to main menu.`
+          );
     } else {
-      twiml.message(
-        `${voucherCode} ❌ رمز قسيمة غير صالح:\n\n` +
-          `يرجى التحقق من الكود ومحاولة مرة أخرى، أو اكتب "القائمة" للعودة إلى القائمة الرئيسية.`
-      );
+      userSession.language === 1
+        ? twiml.message(
+            `${voucherCode} ❌ رمز قسيمة غير صالح:\n\n` +
+              `يرجى التحقق من الكود ومحاولة مرة أخرى، أو اكتب "القائمة" للعودة إلى القائمة الرئيسية.`
+          )
+        : twiml.message(
+            `❌ Invalid voucher code: ${voucherCode}\n\n` +
+              `Please check the code and try again, or type 'menu' to return to main menu.`
+          );
       return; // Stay in voucher input state
     }
 
     userSession.state = "awaiting_voucher";
   }
 
-  static async handleCheckBalance(twiml, customerId) {
-    const customer = await customerById(customerId);
+  static async handleCheckBalance(twiml, userSession) {
+    const customer = await customerById(userSession.customerId);
 
     if (customer) {
-      twiml.message(
-        `💰 معلومات الرصيد\n\n` +
-          `${customer.balance || "0.00"} الرصيد الحالي: $\n` +
-          `${customer.lastRecharge || "غير متوفر"} آخر شحن:\n` +
-          `${customer.nextBillDate || "غير متوفر"} تاريخ الفاتورة القادمة:\n\n` +
-          `اكتب "قائمة" للعودة إلى القائمة الرئيسية.`
-      );
+      userSession.language === 1
+        ? twiml.message(
+            `💰 معلومات الرصيد\n\n` +
+              `${customer.balance || "0.00"} الرصيد الحالي: $\n` +
+              `${customer.lastRecharge || "غير متوفر"} آخر شحن:\n` +
+              `${
+                customer.nextBillDate || "غير متوفر"
+              } تاريخ الفاتورة القادمة:\n\n` +
+              `اكتب "قائمة" للعودة إلى القائمة الرئيسية.`
+          )
+        : twiml.message(
+            `💰 Balance Information\n\n` +
+              `Current Balance: $${customer.balance || "0.00"}\n` +
+              `Last Recharge: ${customer.lastRecharge || "N/A"}\n` +
+              `Next Bill Date: ${customer.nextBillDate || "N/A"}\n\n` +
+              `Type 'menu' to return to main menu.`
+          );
     } else {
-      twiml.message(
-        `❌ لم يتمكن من استرجاع معلومات الرصيد.\n\n` +
-          `اكتب "قائمة" للعودة إلى القائمة الرئيسية.`
-      );
+      userSession.language === 1
+        ? twiml.message(
+            `❌ لم يتمكن من استرجاع معلومات الرصيد.\n\n` +
+              `اكتب "قائمة" للعودة إلى القائمة الرئيسية.`
+          )
+        : twiml.message(
+            `❌ Could not retrieve balance information.\n\n` +
+              `Type 'menu' to return to main menu.`
+          );
     }
   }
 
-  static async handleChangePlan(twiml, customerId) {
-    twiml.message(
-      `📶 خطط الخدمة المتاحة\n\n` +
-        `1️⃣ الخطة الأساسية - 10 دولارات أمريكية شهريًا (1 جيجابايت)\n` +
-        `2️⃣ الخطة القياسية - 20 دولارًا أمريكيًا شهريًا (5 جيجابايت)\n` +
-        `3️⃣ الخطة المميزة - 30 دولارًا أمريكيًا شهريًا (غير محدودة)\n` +
-        `4️⃣ خطة المؤسسة - 50 دولارًا أمريكيًا شهريًا (غير محدود + أولوية)\n\n` +
-        `قم بالرد برقم الخطة (1-4) أو اكتب "القائمة" للعودة.`
-    );
+  static async handleChangePlan(twiml, userSession) {
+    userSession.language === 1
+      ? twiml.message(
+          `📶 خطط الخدمة المتاحة\n\n` +
+            `1️⃣ الخطة الأساسية - 10 دولارات أمريكية شهريًا (1 جيجابايت)\n` +
+            `2️⃣ الخطة القياسية - 20 دولارًا أمريكيًا شهريًا (5 جيجابايت)\n` +
+            `3️⃣ الخطة المميزة - 30 دولارًا أمريكيًا شهريًا (غير محدودة)\n` +
+            `4️⃣ خطة المؤسسة - 50 دولارًا أمريكيًا شهريًا (غير محدود + أولوية)\n\n` +
+            `قم بالرد برقم الخطة (1-4) أو اكتب "القائمة" للعودة.`
+        )
+      : twiml.message(
+          `📶 Available Service Plans\n\n` +
+            `1️⃣ Basic Plan - $10/month (1GB)\n` +
+            `2️⃣ Standard Plan - $20/month (5GB)\n` +
+            `3️⃣ Premium Plan - $30/month (Unlimited)\n` +
+            `4️⃣ Enterprise Plan - $50/month (Unlimited + Priority)\n\n` +
+            `Reply with the plan number (1-4) or type 'menu' to return.`
+        );
   }
 
   static async handlePlanSelection(
@@ -318,7 +433,10 @@ class WhatsappBot {
     selection,
     userSession
   ) {
-    if (selection.toLowerCase() === "menu") {
+    if (
+      selection.toLowerCase() === "menu" ||
+      selection.toLowerCase() === "قائمة طعام"
+    ) {
       userSession.state = "awaiting_selection";
       await WhatsappBot.handleInitialMessage(
         twiml,
@@ -329,46 +447,95 @@ class WhatsappBot {
       return;
     }
 
-    const planMap = {
-      1: "الخطة الأساسية - 10 دولارات أمريكية شهريًا (1 جيجابايت)",
-      2: "الخطة القياسية - 20 دولارًا أمريكيًا شهريًا (5 جيجابايت)",
-      3: "الخطة المميزة - 30 دولارًا أمريكيًا شهريًا (غير محدودة)",
-      4: "خطة المؤسسة - 50 دولارًا أمريكيًا شهريًا (غير محدود + أولوية)",
-    };
-
+    const planMap =
+      userSession.language === 1
+        ? {
+            1: "الخطة الأساسية - 10 دولارات أمريكية شهريًا (1 جيجابايت)",
+            2: "الخطة القياسية - 20 دولارًا أمريكيًا شهريًا (5 جيجابايت)",
+            3: "الخطة المميزة - 30 دولارًا أمريكيًا شهريًا (غير محدودة)",
+            4: "خطة المؤسسة - 50 دولارًا أمريكيًا شهريًا (غير محدود + أولوية)",
+          }
+        : {
+            1: "Basic Plan - $10/month (1GB)",
+            2: "Standard Plan - $20/month (5GB)",
+            3: "Premium Plan - $30/month (Unlimited)",
+            4: "Enterprise Plan - $50/month (Unlimited + Priority)",
+          };
     if (planMap[selection]) {
       // Implement plan change logic here
-      twiml.message(
-        `✅ تم تقديم طلب تغيير الخطة\n\n` +
-          `📦 ${planMap[selection]}خطة جديدة:\n` +
-          `📅 تاريخ السريان: دورة الفوترة التالية\n` +
-          `📧 سيتم إرسال التأكيد عبر البريد الإلكتروني.\n\n` +
-          `اكتب "قائمة" للعودة إلى القائمة الرئيسية.`
-      );
+      userSession.language === 1
+        ? twiml.message(
+            `✅ تم تقديم طلب تغيير الخطة\n\n` +
+              `📦 ${planMap[selection]}خطة جديدة:\n` +
+              `📅 تاريخ السريان: دورة الفوترة التالية\n` +
+              `📧 سيتم إرسال التأكيد عبر البريد الإلكتروني.\n\n` +
+              `اكتب "قائمة" للعودة إلى القائمة الرئيسية.`
+          )
+        : twiml.message(
+            `✅ Plan Change Request Submitted\n\n` +
+              `📦 New Plan: ${planMap[selection]}\n` +
+              `📅 Effective Date: Next billing cycle\n` +
+              `📧 Confirmation will be sent via email.\n\n` +
+              `Type 'menu' to return to main menu.`
+          );
       userSession.state = "awaiting_selection";
     } else {
-      twiml.message(
-        `اختيار الخطة غير صحيح. يُرجى اختيار 1-4 أو كتابة "قائمة" للرجوع.`
-      );
+      userSession.language === 1
+        ? twiml.message(
+            `اختيار الخطة غير صحيح. يُرجى اختيار 1-4 أو كتابة "قائمة" للرجوع.`
+          )
+        : twiml.message(
+            `❌ Invalid plan selection. Please choose 1-4 or type 'menu' to return.`
+          );
     }
   }
 
-  static async handleSupport(twiml, customerId) {
-    twiml.message(
-      `📞 معلومات الدعم\n\n` +
-        `📧 Email: support@yourcompany.com\n` +
-        `📞 Phone: +1-800-XXX-XXXX\n` +
-        `🕒 Hours: Mon-Fri 9AM-6PM\n` +
-        `💬 Live Chat: متوفر على موقعنا\n\n` +
-        `في حالة وجود أي مشكلة طارئة، يرجى الاتصال بخط الدعم الخاص بنا.\n\n` +
-        `اكتب "قائمة" للعودة إلى القائمة الرئيسية.`
-    );
+  static async handleSupport(twiml, userSession) {
+    userSession.language === 1
+      ? twiml.message(
+          `📞 معلومات الدعم\n\n` +
+            `📧 Email: support@yourcompany.com\n` +
+            `📞 Phone: +1-800-XXX-XXXX\n` +
+            `🕒 Hours: Mon-Fri 9AM-6PM\n` +
+            `💬 Live Chat: متوفر على موقعنا\n\n` +
+            `في حالة وجود أي مشكلة طارئة، يرجى الاتصال بخط الدعم الخاص بنا.\n` +
+            `إذا كنت بحاجة إلى تغيير اللغة اكتب الرقم 0 أو 1، 0-الإنجليزية، 1-العربية\n` +
+            `اكتب "قائمة" للعودة إلى القائمة الرئيسية.`
+        )
+      : twiml.message(
+          `📞 Support Information\n\n` +
+            `📧 Email: support@yourcompany.com\n` +
+            `📞 Phone: +1-800-XXX-XXXX\n` +
+            `🕒 Hours: Mon-Fri 9AM-6PM\n` +
+            `💬 Live Chat: Available on our website\n\n` +
+            `For urgent issues, please call our support line.\n` +
+            `If you need change language type number 0 or 1 , 0-english, 1-arabic\n` +
+            `Type 'menu' to return to main menu.`
+        );
+    userSession.state = "support";
   }
 
   static async validateVoucher(voucherCode) {
     // Implement your voucher validation logic here
     // WhatsappBot is just a placeholder
     return voucherCode.length >= 6 && voucherCode.length <= 12;
+  }
+
+  static async changeLanguage(twiml, senderNumber, userMessage, userSession) {
+    const message = userMessage.trim();
+    console.log("support message", message, typeof(message));
+    const clang = message === 0 ? 'English' : 'Arabic'
+    userSession.language === '0'
+      ? twiml.message(
+          `Lanauage is changed to ${clang} \n` +
+          `Type 'menu' to return to main menu.`
+        )
+      : twiml.message(
+         `تم تغيير اللغة إلى ${clang} \n` + 
+         `اكتب "القائمة" للعودة إلى القائمة الرئيسية.`
+        );
+    userSession.language = message === '0' ? 0 : 1;
+    userSession.state = "awaiting_selection";
   }
 
   static resetUserSession(senderNumber) {
