@@ -49,10 +49,14 @@ class WhatsappBot {
       language: 0,
     };
     console.log("User message:", userMessage);
-    console.log('language',userSession.language)
+    console.log("language", userSession.language);
     try {
       if (Date.now() - userSession.lastActivity > 30 * 60 * 1000) {
-        userSession = { state: "initial", lastActivity: Date.now(), language: userSession.language || 0 };
+        userSession = {
+          state: "initial",
+          lastActivity: Date.now(),
+          language: userSession.language || 0,
+        };
       }
       console.log("User session state:", userSession.state);
       switch (userSession.state) {
@@ -169,26 +173,26 @@ class WhatsappBot {
       userSession.customerName = customer.name || "Customer";
     }
     userSession.state = "awaiting_selection";
-    console.log('language', userSession.language)
+    console.log("language", userSession.language);
     userSession.language === 1
       ? twiml.message(
           `👋 ${userSession.customerName} !مرحباً\n\n` +
-            `الرجاء اختيار أحد الخيارات عن طريق الرد بالرقم:\n` +
-            `📋 عرض معلومات الحساب واستخدام البيانات\n` +
-            `🎫 إعادة الشحن عبر القسيمة\n` +
-            `💰 التحقق من الرصيد\n` +
-            `📶 تغيير خطة الخدمة\n` +
-            `📞 الدعم والردود التلقائية\n\n` +
+            `❌ اختيار خاطئ. يُرجى الرد برقم من ١ إلى ٥.\n\n` +
+            `1️⃣ عرض معلومات الحساب\n` +
+            `2️⃣ إعادة الشحن عبر القسيمة\n` +
+            `3️⃣ التحقق من الرصيد\n` +
+            `4️⃣ تغيير خطة الخدمة\n` +
+            `5️⃣ يدعم\n\n` +
             `أجب برقم (1 ~ 5) للاستمرار`
         )
       : twiml.message(
           `👋 Welcome ${userSession.customerName}!\n\n` +
             `Please choose an option by replying with the number:\n` +
-            `📋 View account information and data usage\n` +
-            `🎫 Recharge via voucher\n` +
-            `💰 Check balance\n` +
-            `📶 Change service plan\n` +
-            `📞 Support & Auto-Replies\n\n` +
+            `1️⃣ View account information\n` +
+            `2️⃣ Recharge via voucher\n` +
+            `3️⃣ Check balance\n` +
+            `4️⃣ Change service plan\n` +
+            `5️⃣ Support & Auto-Replies\n\n` +
             `Reply with a number (1-5) to continue.`
         );
     return;
@@ -233,7 +237,7 @@ class WhatsappBot {
               `2️⃣ Recharge via voucher\n` +
               `3️⃣ Check balance\n` +
               `4️⃣ Change service plan\n` +
-              `5️⃣ Support\n\n` +
+              `5️⃣ Support & Auto-Replies\n\n` +
               `Type 'menu' to see options again.`
           );
       return;
@@ -282,7 +286,7 @@ class WhatsappBot {
               `👤 ${customer.name || "غير متوفر"} :اسم المستخدم\n` +
               `📦 ${customer.plan || "مدفوع مسبقًا (مخصص)"} الخطة الحالية:\n` +
               `✨ ${customer.expire} تاريخ انتهاء الصلاحية:\n` +
-              `🎉 ${customer.speed} سرعة:\n` +
+              `📈 ${customer.speed} سرعة:\n` +
               `💰 ${customer.balance || "0.00"} الرصيد: $\n` +
               `🧶 ${customer.status} حالة:\n` +
               `📊${customer.dataUsage || "0 MB"} استخدام البيانات:/ ${
@@ -294,11 +298,11 @@ class WhatsappBot {
             `📋 Account Information\n\n` +
               `👤 UserName: ${customer.name || "N/A"}\n` +
               `📦 Current Plan: ${
-                customer.billing_type || "Prepaid(custom)"
+                customer.plan || "Prepaid(custom)"
               }\n` +
-              `📞 Expiry Date: ${customer.last_update}\n` +
-              `🎉 Speed: ${customer.id}\n` +
-              `💰 Balance: $${customer.mrr_total || "0.00"}\n` +
+              `✨ Expiry Date: ${customer.expire}\n` +
+              `📈 Speed: ${customer.id}\n` +
+              `💰 Balance: $${customer.balance || "0.00"}\n` +
               `🧶 Status: ${customer.status}\n` +
               `📊 Data Usage: ${customer.dataUsage || "0 MB"} / ${
                 customer.dataLimit || "Unlimited"
@@ -500,7 +504,7 @@ class WhatsappBot {
             `💬 Live Chat: متوفر على موقعنا\n\n` +
             `في حالة وجود أي مشكلة طارئة، يرجى الاتصال بخط الدعم الخاص بنا.\n` +
             `إذا كنت بحاجة إلى تغيير اللغة، يرجى كتابة الرقم 0 أو 1 \n.` +
-            `مثال: 0-الإنجليزية، 1-العربية \n`+
+            `مثال: 0-الإنجليزية، 1-العربية \n` +
             `اكتب "قائمة" للعودة إلى القائمة الرئيسية.`
         )
       : twiml.message(
@@ -525,18 +529,18 @@ class WhatsappBot {
 
   static async changeLanguage(twiml, senderNumber, userMessage, userSession) {
     const message = userMessage.trim();
-    console.log("support message", message, typeof(message));
-    const clang = message === 0 ? 'English' : 'Arabic'
-    userSession.language === '0'
+    console.log("support message", message, typeof message);
+    const clang = message === 0 ? "English" : "Arabic";
+    userSession.language === "0"
       ? twiml.message(
           `Lanauage is changed to ${clang} \n` +
-          `Type 'menu' to return to main menu.`
+            `Type 'menu' to return to main menu.`
         )
       : twiml.message(
-         `تم تغيير اللغة إلى ${clang} \n` + 
-         `اكتب "القائمة" للعودة إلى القائمة الرئيسية.`
+          `تم تغيير اللغة إلى ${clang} \n` +
+            `اكتب "القائمة" للعودة إلى القائمة الرئيسية.`
         );
-    userSession.language = message === '0' ? 0 : 1;
+    userSession.language = message === "0" ? 0 : 1;
     userSession.state = "awaiting_selection";
   }
 
