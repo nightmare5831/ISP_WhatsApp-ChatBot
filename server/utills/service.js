@@ -18,11 +18,23 @@ export const customerByIdPassword = async (customerId) => {
 };
 
 export const customerById = async (customerId) => {
-  const response = await splynxRequest("get", `/customers/customer`, {
+  let result = {
+    id:'', name:'', expire:'', plan:'', speed:'', balance:'', status:'', dataUsage:'', dataLimit:''
+  }
+
+  const customer = await splynxRequest("get", `/customers/customer`, {
     id: customerId,
   });
-  console.log('customer', response.data);
-  const speed = await splynxRequest("get", `/customers/customer/${customerId}/internet-services`,null);
-  console.log('speed', speed.data);
-  return response.data || null;
+  const internetService = await splynxRequest("get", `/customers/customer/${customerId}/internet-services`,null);
+  const tariff = await splynxRequest("get", `/tariffs/internet/${internetService.data[0].tariff_id}`, null);
+
+  result.id = customer.data.id;
+  result.name = customer.data.name;
+  result.expire = customer.data.last_update;
+  result.plan = customer.data.billing_type || 'Prepaid(custom)';
+  result.status = customer.data.status;
+  result.balance = customer.data.mrr_total || '0.00';
+  result.speed = tariff.data.speed_download || 'N/A';
+  
+  return result;
 };

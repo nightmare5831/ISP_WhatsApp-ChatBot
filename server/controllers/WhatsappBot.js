@@ -130,7 +130,7 @@ class WhatsappBot {
       userSession.state = "idVerification";
       twiml.message(
         `Hello, we could not find your account with the number ${senderNumber}.\n` +
-        `Please send 👤 CutomerId and 🔑 Portal-login , Or 📞 contact support.\n`+
+        `Please enter 👤 CutomerId and 🔑 Portal-login , or 📞 contact support.\n`+
         `Example: 9557 4001360932\n\n`
       );
       return;
@@ -225,10 +225,10 @@ class WhatsappBot {
       twiml.message(
         `📋 Account Information\n\n` +
         `👤 UserName: ${customer.name || "N/A"}\n` +
-        `📦 Current Plan: ${customer.billing_type || "Prepaid(custom)"}\n` +
-        `📞 Expiry Date: ${customer.last_update}\n` +
-        `🎉 Speed: ${customer.id}\n` +
-        `💰 Balance: $${customer.mrr_total || "0.00"}\n` +
+        `📦 Current Plan: ${customer.plan || "Prepaid(custom)"}\n` +
+        `✨ Expiry Date: ${customer.expire}\n` +
+        `🎉 Speed: ${customer.speed}\n` +
+        `💰 Balance: $${customer.balance || "0.00"}\n` +
         `🧶 Status: ${customer.status}\n` +
         `📊 Data Usage: ${customer.dataUsage || "0 MB"} / ${
           customer.dataLimit || "Unlimited"
