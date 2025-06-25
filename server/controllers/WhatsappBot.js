@@ -499,7 +499,8 @@ class WhatsappBot {
             `🕒 Hours: Mon-Fri 9AM-6PM\n` +
             `💬 Live Chat: متوفر على موقعنا\n\n` +
             `في حالة وجود أي مشكلة طارئة، يرجى الاتصال بخط الدعم الخاص بنا.\n` +
-            `إذا كنت بحاجة إلى تغيير اللغة اكتب الرقم 0 أو 1، 0-الإنجليزية، 1-العربية\n` +
+            `إذا كنت بحاجة إلى تغيير اللغة، يرجى كتابة الرقم 0 أو 1 \n.` +
+            `مثال: 0-الإنجليزية، 1-العربية \n`+
             `اكتب "قائمة" للعودة إلى القائمة الرئيسية.`
         )
       : twiml.message(
@@ -509,7 +510,8 @@ class WhatsappBot {
             `🕒 Hours: Mon-Fri 9AM-6PM\n` +
             `💬 Live Chat: Available on our website\n\n` +
             `For urgent issues, please call our support line.\n` +
-            `If you need change language type number 0 or 1 , 0-english, 1-arabic\n` +
+            `If you need to change language, please type number 0 or 1 \n.` +
+            `ex: 0-english, 1-arabic \n` +
             `Type 'menu' to return to main menu.`
         );
     userSession.state = "support";
