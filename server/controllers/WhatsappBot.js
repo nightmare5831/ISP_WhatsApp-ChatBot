@@ -129,9 +129,9 @@ class WhatsappBot {
     if (!customer && !customerId) {
       userSession.state = "idVerification";
       twiml.message(
-        `Hello, we could not find your account with the number ${senderNumber}.\n` +
-        `Please enter 👤 CutomerId and 🔑 Portal-login , or 📞 contact support.\n`+
-        `Example: 9557 4001360932\n\n`
+        `${senderNumber} مرحبًا، لم نتمكن من العثور على حسابك بالرقم.\n` +
+        `الرجاء إدخال 👤 معرف العميل و 🔑 تسجيل الدخول إلى البوابة، أو 📞 الاتصال بالدعم.\n`+
+        `مثال: 9557 4001360932\n\n`
       );
       return;
     }
@@ -141,14 +141,14 @@ class WhatsappBot {
     };
     userSession.state = "awaiting_selection";
     twiml.message(
-      `👋 Welcome ${userSession.customerName}!\n\n` +
-        `Please choose an option by replying with the number:\n` +
-        `📋 View account information and data usage\n` +
-        `🎫 Recharge via voucher\n` +
-        `💰 Check balance\n` +
-        `📶 Change service plan\n` +
-        `📞 Support & Auto-Replies\n\n` +
-        `Reply with a number (1-5) to continue.`
+      `👋 ${userSession.customerName} !مرحباً\n\n` +
+        `الرجاء اختيار أحد الخيارات عن طريق الرد بالرقم:\n` +
+        `📋 عرض معلومات الحساب واستخدام البيانات\n` +
+        `🎫 إعادة الشحن عبر القسيمة\n` +
+        `💰 التحقق من الرصيد\n` +
+        `📶 تغيير خطة الخدمة\n` +
+        `📞 الدعم والردود التلقائية\n\n` +
+        `أجب برقم (1 ~ 5) للاستمرار`
     );
     return;
   }
@@ -174,13 +174,13 @@ class WhatsappBot {
 
     if (!MENU_OPTIONS[selection]) {
       twiml.message(
-        `❌ Invalid selection. Please reply with a number from 1 to 5.\n\n` +
-          `1️⃣ View account information\n` +
-          `2️⃣ Recharge via voucher\n` +
-          `3️⃣ Check balance\n` +
-          `4️⃣ Change service plan\n` +
-          `5️⃣ Support\n\n` +
-          `Type 'menu' to see options again.`
+        `❌ اختيار خاطئ. يُرجى الرد برقم من ١ إلى ٥.\n\n` +
+          `1️⃣ عرض معلومات الحساب\n` +
+          `2️⃣ إعادة الشحن عبر القسيمة\n` +
+          `3️⃣ التحقق من الرصيد\n` +
+          `4️⃣ تغيير خطة الخدمة\n` +
+          `5️⃣ يدعم\n\n` +
+          `اكتب "القائمة" لرؤية الخيارات مرة أخرى.`
       );
       return;
     }
@@ -223,22 +223,22 @@ class WhatsappBot {
 
     if (customer) {
       twiml.message(
-        `📋 Account Information\n\n` +
-        `👤 UserName: ${customer.name || "N/A"}\n` +
-        `📦 Current Plan: ${customer.plan || "Prepaid(custom)"}\n` +
-        `✨ Expiry Date: ${customer.expire}\n` +
-        `🎉 Speed: ${customer.speed}\n` +
-        `💰 Balance: $${customer.balance || "0.00"}\n` +
-        `🧶 Status: ${customer.status}\n` +
-        `📊 Data Usage: ${customer.dataUsage || "0 MB"} / ${
-          customer.dataLimit || "Unlimited"
+        `📋 معلومات الحساب\n\n` +
+        `👤 ${customer.name || "غير متوفر"} :اسم المستخدم\n` +
+        `📦 ${customer.plan || "مدفوع مسبقًا (مخصص)"} الخطة الحالية:\n` +
+        `✨ ${customer.expire} تاريخ انتهاء الصلاحية:\n` +
+        `🎉 ${customer.speed} سرعة:\n` +
+        `💰 ${customer.balance || "0.00"} الرصيد: $\n` +
+        `🧶 ${customer.status} حالة:\n` +
+        `📊${customer.dataUsage || "0 MB"} استخدام البيانات:/ ${
+          customer.dataLimit || "غير محدود"
         }\n` +
-        `Type 'menu' to return to main menu.`
+        `اكتب "القائمة" للعودة إلى القائمة الرئيسية.`
       );
     } else {
       twiml.message(
-        `❌ Could not retrieve account information. Please contact support.\n\n` +
-          `Type 'menu' to return to main menu.`
+        `❌ تعذر استرداد معلومات الحساب. يُرجى التواصل مع الدعم.\n\n` +
+         `اكتب 'menu' للعودة إلى القائمة الرئيسية.`
       );
     }
   }
@@ -265,16 +265,16 @@ class WhatsappBot {
 
     if (isValidVoucher) {
       twiml.message(
-        `✅ Voucher Applied Successfully!\n\n` +
-          `🎫 Voucher Code: ${voucherCode}\n` +
-          `💰 Amount: $10.00\n` +
-          `📊 New Balance: $25.00\n\n` +
-          `Type 'menu' to return to main menu.`
+        `✅ تم تطبيق القسيمة بنجاح!\n\n` +
+          `🎫 ${voucherCode} رمز القسيمة:\n` +
+          `💰 المبلغ: 10.00 دولارًا\n` +
+          `📊 نيو بالانس: 25.00 دولارًا\n\n` +
+          `اكتب "القائمة" للعودة إلى القائمة الرئيسية.`
       );
     } else {
       twiml.message(
-        `❌ Invalid voucher code: ${voucherCode}\n\n` +
-          `Please check the code and try again, or type 'menu' to return to main menu.`
+        `${voucherCode} ❌ رمز قسيمة غير صالح:\n\n` +
+          `يرجى التحقق من الكود ومحاولة مرة أخرى، أو اكتب "القائمة" للعودة إلى القائمة الرئيسية.`
       );
       return; // Stay in voucher input state
     }
@@ -287,28 +287,28 @@ class WhatsappBot {
 
     if (customer) {
       twiml.message(
-        `💰 Balance Information\n\n` +
-          `Current Balance: $${customer.balance || "0.00"}\n` +
-          `Last Recharge: ${customer.lastRecharge || "N/A"}\n` +
-          `Next Bill Date: ${customer.nextBillDate || "N/A"}\n\n` +
-          `Type 'menu' to return to main menu.`
+        `💰 معلومات الرصيد\n\n` +
+          `${customer.balance || "0.00"} الرصيد الحالي: $\n` +
+          `${customer.lastRecharge || "غير متوفر"} آخر شحن:\n` +
+          `${customer.nextBillDate || "غير متوفر"} تاريخ الفاتورة القادمة:\n\n` +
+          `اكتب "قائمة" للعودة إلى القائمة الرئيسية.`
       );
     } else {
       twiml.message(
-        `❌ Could not retrieve balance information.\n\n` +
-          `Type 'menu' to return to main menu.`
+        `❌ لم يتمكن من استرجاع معلومات الرصيد.\n\n` +
+          `اكتب "قائمة" للعودة إلى القائمة الرئيسية.`
       );
     }
   }
 
   static async handleChangePlan(twiml, customerId) {
     twiml.message(
-      `📶 Available Service Plans\n\n` +
-        `1️⃣ Basic Plan - $10/month (1GB)\n` +
-        `2️⃣ Standard Plan - $20/month (5GB)\n` +
-        `3️⃣ Premium Plan - $30/month (Unlimited)\n` +
-        `4️⃣ Enterprise Plan - $50/month (Unlimited + Priority)\n\n` +
-        `Reply with the plan number (1-4) or type 'menu' to return.`
+      `📶 خطط الخدمة المتاحة\n\n` +
+        `1️⃣ الخطة الأساسية - 10 دولارات أمريكية شهريًا (1 جيجابايت)\n` +
+        `2️⃣ الخطة القياسية - 20 دولارًا أمريكيًا شهريًا (5 جيجابايت)\n` +
+        `3️⃣ الخطة المميزة - 30 دولارًا أمريكيًا شهريًا (غير محدودة)\n` +
+        `4️⃣ خطة المؤسسة - 50 دولارًا أمريكيًا شهريًا (غير محدود + أولوية)\n\n` +
+        `قم بالرد برقم الخطة (1-4) أو اكتب "القائمة" للعودة.`
     );
   }
 
@@ -330,38 +330,38 @@ class WhatsappBot {
     }
 
     const planMap = {
-      1: "Basic Plan - $10/month (1GB)",
-      2: "Standard Plan - $20/month (5GB)",
-      3: "Premium Plan - $30/month (Unlimited)",
-      4: "Enterprise Plan - $50/month (Unlimited + Priority)",
+      1: "الخطة الأساسية - 10 دولارات أمريكية شهريًا (1 جيجابايت)",
+      2: "الخطة القياسية - 20 دولارًا أمريكيًا شهريًا (5 جيجابايت)",
+      3: "الخطة المميزة - 30 دولارًا أمريكيًا شهريًا (غير محدودة)",
+      4: "خطة المؤسسة - 50 دولارًا أمريكيًا شهريًا (غير محدود + أولوية)",
     };
 
     if (planMap[selection]) {
       // Implement plan change logic here
       twiml.message(
-        `✅ Plan Change Request Submitted\n\n` +
-          `📦 New Plan: ${planMap[selection]}\n` +
-          `📅 Effective Date: Next billing cycle\n` +
-          `📧 Confirmation will be sent via email.\n\n` +
-          `Type 'menu' to return to main menu.`
+        `✅ تم تقديم طلب تغيير الخطة\n\n` +
+          `📦 ${planMap[selection]}خطة جديدة:\n` +
+          `📅 تاريخ السريان: دورة الفوترة التالية\n` +
+          `📧 سيتم إرسال التأكيد عبر البريد الإلكتروني.\n\n` +
+          `اكتب "قائمة" للعودة إلى القائمة الرئيسية.`
       );
       userSession.state = "awaiting_selection";
     } else {
       twiml.message(
-        `❌ Invalid plan selection. Please choose 1-4 or type 'menu' to return.`
+        `اختيار الخطة غير صحيح. يُرجى اختيار 1-4 أو كتابة "قائمة" للرجوع.`
       );
     }
   }
 
   static async handleSupport(twiml, customerId) {
     twiml.message(
-      `📞 Support Information\n\n` +
+      `📞 معلومات الدعم\n\n` +
         `📧 Email: support@yourcompany.com\n` +
         `📞 Phone: +1-800-XXX-XXXX\n` +
         `🕒 Hours: Mon-Fri 9AM-6PM\n` +
-        `💬 Live Chat: Available on our website\n\n` +
-        `For urgent issues, please call our support line.\n\n` +
-        `Type 'menu' to return to main menu.`
+        `💬 Live Chat: متوفر على موقعنا\n\n` +
+        `في حالة وجود أي مشكلة طارئة، يرجى الاتصال بخط الدعم الخاص بنا.\n\n` +
+        `اكتب "قائمة" للعودة إلى القائمة الرئيسية.`
     );
   }
 
