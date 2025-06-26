@@ -27,11 +27,10 @@ export const customerById = async (customerId) => {
   });
   const internetService = await splynxRequest("get", `/customers/customer/${customerId}/internet-services`,null);
   const tariff = await splynxRequest("get", `/tariffs/internet/${internetService.data[0].tariff_id}`, null);
-  const billing = await splynxRequest("get", `/customers/${customerId}/billing-info`, null);
+  // const billing = await splynxRequest("get", `/customers/customer/${customerId}/billing-info`, null);
 
   console.log('customer', customer.data)
-  console.log('billing', billing.data)
-  
+
   result.id = customer.data.id;
   result.name = customer.data.name;
   result.expire = customer.data.last_update;
