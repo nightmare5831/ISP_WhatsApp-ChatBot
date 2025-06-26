@@ -297,9 +297,7 @@ class WhatsappBot {
         : twiml.message(
             `📋 Account Information\n\n` +
               `👤 UserName: ${customer.name || "N/A"}\n` +
-              `📦 Current Plan: ${
-                customer.plan || "Prepaid(custom)"
-              }\n` +
+              `📦 Current Plan: ${customer.plan || "Prepaid(custom)"}\n` +
               `✨ Expiry Date: ${customer.expire}\n` +
               `📈 Speed: ${customer.id}\n` +
               `💰 Balance: $${customer.balance || "0.00"}\n` +
@@ -385,7 +383,7 @@ class WhatsappBot {
         ? twiml.message(
             `💰 معلومات الرصيد\n\n` +
               `${customer.balance || "0.00"} الرصيد الحالي: $\n` +
-              `${customer.lastRecharge || "غير متوفر"} آخر شحن:\n` +
+              `آخر عملية شحن: ${customer.lastRecharge || "N/A"}\n` +
               `${
                 customer.nextBillDate || "غير متوفر"
               } تاريخ الفاتورة القادمة:\n\n` +
@@ -393,7 +391,7 @@ class WhatsappBot {
           )
         : twiml.message(
             `💰 Balance Information\n\n` +
-              `Current Balance: $${customer.balance || "0.00"}\n` +
+              `Current Balance: LYD ${customer.balance || "0.00"}\n` +
               `Last Recharge: ${customer.lastRecharge || "N/A"}\n` +
               `Next Bill Date: ${customer.nextBillDate || "N/A"}\n\n` +
               `Type 'menu' to return to main menu.`
@@ -454,16 +452,16 @@ class WhatsappBot {
     const planMap =
       userSession.language === 1
         ? {
-            1: "الخطة الأساسية - 10 دولارات أمريكية شهريًا (1 جيجابايت)",
-            2: "الخطة القياسية - 20 دولارًا أمريكيًا شهريًا (5 جيجابايت)",
-            3: "الخطة المميزة - 30 دولارًا أمريكيًا شهريًا (غير محدودة)",
-            4: "خطة المؤسسة - 50 دولارًا أمريكيًا شهريًا (غير محدود + أولوية)",
+            1: "الخطة الأساسية - 10 دنانير ليبية/شهريًا (1 جيجابايت)",
+            2: "الخطة القياسية - 20 دينار ليبي/الشهر (5 جيجابايت)",
+            3: "الخطة المميزة - 30 دينار ليبي شهريًا (غير محدودة)",
+            4: "خطة المؤسسة - 0 دينار ليبي/الشهر (غير محدود + أولوية)",
           }
         : {
-            1: "Basic Plan - $10/month (1GB)",
-            2: "Standard Plan - $20/month (5GB)",
-            3: "Premium Plan - $30/month (Unlimited)",
-            4: "Enterprise Plan - $50/month (Unlimited + Priority)",
+            1: "Basic Plan - LYD 10/month (1GB)",
+            2: "Standard Plan - LYD 20/month (5GB)",
+            3: "Premium Plan - LYD 30/month (Unlimited)",
+            4: "Enterprise Plan - LYD 0/month (Unlimited + Priority)",
           };
     if (planMap[selection]) {
       // Implement plan change logic here

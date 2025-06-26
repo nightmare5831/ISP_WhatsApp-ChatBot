@@ -27,17 +27,16 @@ export const customerById = async (customerId) => {
   });
   const internetService = await splynxRequest("get", `/customers/customer/${customerId}/internet-services`,null);
   const tariff = await splynxRequest("get", `/tariffs/internet/${internetService.data[0].tariff_id}`, null);
-  const billing = await splynxRequest("get", `/customers/${customerId}/billing-info`, null);
+  const billing = await splynxRequest("get", `/customers/customer-billing`, {
+    main_attributes: { customer_id:customerId },
+  });
 
-  console.log('customer', customer.data)
-  console.log('billing', billing.data)
-  
   result.id = customer.data.id;
   result.name = customer.data.name;
   result.expire = customer.data.last_update;
   result.plan = customer.data.billing_type || 'Prepaid(custom)';
   result.status = customer.data.status;
-  result.balance = customer.data.mrr_total || '0.00';
+  result.balance = billing.data.deposit || '0.00';
   result.speed = tariff.data.speed_download || 'N/A';
   
   return result;
