@@ -300,7 +300,7 @@ class WhatsappBot {
               `📦 Current Plan: ${customer.plan || "Prepaid(custom)"}\n` +
               `✨ Expiry Date: ${customer.expire}\n` +
               `📈 Speed: ${customer.id}\n` +
-              `💰 Balance: $${customer.balance || "0.00"}\n` +
+              `💰 Balance: LYD${customer.balance || "0.00"}\n` +
               `🧶 Status: ${customer.status}\n` +
               `📊 Data Usage: ${customer.dataUsage || "0 MB"} / ${
                 customer.dataLimit || "Unlimited"
