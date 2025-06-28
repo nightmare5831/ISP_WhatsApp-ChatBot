@@ -31,12 +31,19 @@ export const customerById = async (customerId) => {
     main_attributes: { customer_id:customerId },
   });
 
+  console.log("customer:", customer.data);
+  console.log("internetService:", internetService.data);
+  console.log("tariff:", tariff.data);
+  console.log("billing:", billing.data, billing.data[0].deposit);
+  // const  cap= await splynxRequest("get", `/customers/cap-history/${customerId}`, null);
+  // console.log("cap:", cap.data);
+
   result.id = customer.data.id;
   result.name = customer.data.name;
   result.expire = customer.data.last_update;
-  result.plan = customer.data.billing_type || 'Prepaid(custom)';
   result.status = customer.data.status;
-  result.balance = billing.data.deposit || '0.00';
+  result.balance = billing.data[0].deposit || '0.00';
+  result.plan = tariff.data.title || 'title not found';
   result.speed = tariff.data.speed_download || 'N/A';
   
   return result;
