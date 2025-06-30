@@ -286,12 +286,10 @@ class WhatsappBot {
               `👤 ${customer.name || "غير متوفر"} :اسم المستخدم\n` +
               `📦 ${customer.plan || "مدفوع مسبقًا (مخصص)"} الخطة الحالية:\n` +
               `✨ ${customer.expire} تاريخ انتهاء الصلاحية:\n` +
-              `📈 ${customer.speed} سرعة:\n` +
+              `📈 ${customer.speed} MB سرعة:\n` +
               `💰 ${customer.balance || "0.00"} الرصيد: $\n` +
               `🧶 ${customer.status} حالة:\n` +
-              `📊${customer.dataUsage || "0 MB"} استخدام البيانات:/ ${
-                customer.dataLimit || "غير محدود"
-              }\n` +
+              `📊 استخدام البيانات: ${customer.dataUsage || "0"} جيجابايت / ${customer.dataLimit || "غير محدود"} جيجابايت \n`+
               `اكتب "القائمة" للعودة إلى القائمة الرئيسية.`
           )
         : twiml.message(
@@ -299,12 +297,10 @@ class WhatsappBot {
               `👤 UserName: ${customer.name || "N/A"}\n` +
               `📦 Current Plan: ${customer.plan || "Prepaid(custom)"}\n` +
               `✨ Expiry Date: ${customer.expire}\n` +
-              `📈 Speed: ${customer.id}\n` +
-              `💰 Balance: LYD${customer.balance || "0.00"}\n` +
+              `📈 Speed: ${customer.id} MB\n` +
+              `💰 Balance: LYD ${customer.balance || "0.00"}\n` +
               `🧶 Status: ${customer.status}\n` +
-              `📊 Data Usage: ${customer.dataUsage || "0 MB"} / ${
-                customer.dataLimit || "Unlimited"
-              }\n` +
+              `📊 Data Usage: ${customer.dataUsage || "0"} GB / ${customer.dataLimit || "Unlimited"} GB \n` +
               `Type 'menu' to return to main menu.`
           );
     } else {
