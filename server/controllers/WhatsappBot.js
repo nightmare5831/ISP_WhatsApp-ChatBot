@@ -49,7 +49,6 @@ class WhatsappBot {
       language: 0,
     };
     console.log("User message:", userMessage);
-    console.log("language", userSession.language);
     try {
       if (Date.now() - userSession.lastActivity > 30 * 60 * 1000) {
         userSession = {
@@ -337,7 +336,7 @@ class WhatsappBot {
     }
 
     // Validate and process voucher (implement your voucher logic here)
-    const isValidVoucher = await WhatsappBot.validateVoucher(voucherCode);
+    const isValidVoucher = await WhatsappBot.validateVoucher(voucherCode, userSession.customerId);
 
     if (isValidVoucher) {
       userSession.language === 1
@@ -515,7 +514,7 @@ class WhatsappBot {
     userSession.state = "support";
   }
 
-  static async validateVoucher(voucherCode) {
+  static async validateVoucher(voucherCode,customerId) {
     // Implement your voucher validation logic here
     // WhatsappBot is just a placeholder
     return voucherCode.length >= 6 && voucherCode.length <= 12;

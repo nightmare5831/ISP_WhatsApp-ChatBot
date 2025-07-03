@@ -83,3 +83,12 @@ export const customerById = async (customerId) => {
   result.dataLimit = download || "0.00";
   return result;
 };
+
+export const rechargeVoucher = async (voucherCode, customerId) => {
+  console.log('voucherCode', voucherCode, 'customerId', customerId)
+  const response = await splynxRequest("get", `/finance/refill-cards/0?redeem=true`, {
+    'code': voucherCode, customer_id: customerId
+  });
+  console.log('voucher',response.data)
+  return true;
+};
